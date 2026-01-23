@@ -1,69 +1,41 @@
-"use client";
+import { createContext, useContext, ReactNode, useState, useCallback } from "react";
 
-import { useState, useCallback, createContext, useContext, ReactNode } from "react";
-import type { Toast, ToastType } from "@/types"
-import { generateId } from "@/lib/utils";
+interface Toast {
+  id: string;
+  title: string;
+  description?: string;
+  type?: "success" | "error" | "info";
+}
 
 interface ToastContextType {
   toasts: Toast[];
-  addToast: (message: string, type?: ToastType, duration?: number) => void;
+  addToast: (toast: Omit<Toast, "id">) => void;
   removeToast: (id: string) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
-  warning: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback(
-    (message: string, type: ToastType = "info", duration: number = 5000) => {
-      const id = generateId();
-      setToasts((prev) => [...prev, { id, message, type, duration }]);
-    },
-    []
-  );
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  const addToast = useCallback((toast: Omit<Toast, "id">) => {
+    const id = Math.random().toString(36).substring(2, 10);
+    setToasts((prev) => [...prev, { ...toast, id }]);
   }, []);
 
-  const success = useCallback(
-    (message: string) => addToast(message, "success"),
-    [addToast]
-  );
-
-  const error = useCallback(
-    (message: string) => addToast(message, "error"),
-    [addToast]
-  );
-
-  const info = useCallback(
-    (message: string) => addToast(message, "info"),
-    [addToast]
-  );
-
-  const warning = useCallback(
-    (message: string) => addToast(message, "warning"),
-    [addToast]
-  );
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   return (
-    <ToastContext.Provider
-      value={{ toasts, addToast, removeToast, success, error, info, warning }}
-    >
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
     </ToastContext.Provider>
   );
-}
+};
 
-export function useToast(): ToastContextType {
+export const useToast = () => {
   const context = useContext(ToastContext);
-  if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
+  if (!context) throw new Error("useToast must be used within ToastProvider");
   return context;
-}
+};

@@ -1,13 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 
 app = FastAPI()
 
-# ✅ CORS FIX
+# ✅ CORS FIX (local + Vercel + HF)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # frontend
+    allow_origins=[
+        "http://localhost:3000",
+        "https://*.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,3 +33,12 @@ def login(data: LoginRequest):
             "token_type": "bearer"
         }
     raise HTTPException(status_code=401, detail="Invalid credentials")
+
+# ✅ REQUIRED for Hugging Face
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 7860))
+    )
